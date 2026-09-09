@@ -17,6 +17,21 @@ connectDB();
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 
+// Ruta raíz (para evitar error 404)
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: '🌙 Luna & Alma API',
+    version: '1.0.0',
+    status: '✅ Servidor funcionando correctamente',
+    endpoints: {
+      test: '/api/test',
+      auth: '/api/auth/login',
+      products: '/api/products'
+    }
+  });
+});
+
 // Ruta de prueba
 app.get('/api/test', (req, res) => {
   res.json({ 
