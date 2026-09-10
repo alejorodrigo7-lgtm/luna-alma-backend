@@ -1,3 +1,4 @@
+// models/Shift.js
 const mongoose = require('mongoose');
 
 const ShiftSchema = new mongoose.Schema({

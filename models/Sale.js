@@ -1,19 +1,17 @@
+// models/Sale.js
 const mongoose = require('mongoose');
 
 const SaleSchema = new mongoose.Schema({
   invoice: { 
     type: String, 
     required: true, 
-    unique: true 
+    unique: true // Ejemplo: LA-2026-0042
   },
   clientName: { 
     type: String, 
     required: true 
   },
   clientEmail: { 
-    type: String 
-  },
-  clientPhone: { 
     type: String 
   },
   products: [{
@@ -42,7 +40,7 @@ const SaleSchema = new mongoose.Schema({
   },
   iva: { 
     type: Number, 
-    required: true 
+    required: true // 15% del subtotal
   },
   ivaRate: { 
     type: Number, 

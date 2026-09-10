@@ -1,3 +1,4 @@
+// models/InventoryMovement.js
 const mongoose = require('mongoose');
 
 const InventoryMovementSchema = new mongoose.Schema({
@@ -8,7 +9,7 @@ const InventoryMovementSchema = new mongoose.Schema({
   },
   type: { 
     type: String, 
-    enum: ['entry', 'sale', 'adjustment'],
+    enum: ['entry', 'sale', 'adjustment'], // entrada, venta, ajuste
     required: true 
   },
   quantity: { 

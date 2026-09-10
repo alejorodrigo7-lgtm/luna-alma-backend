@@ -16,6 +16,10 @@ connectDB();
 // Rutas
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
+// Rutas del sistema de gestión
+app.use('/api/sales', require('./routes/sales'));
+app.use('/api/shifts', require('./routes/shifts'));
+app.use('/api/history', require('./routes/history'));
 // Ruta temporal para crear usuarios (SOLO PARA PRUEBAS)
 app.post('/api/setup/create-users', async (req, res) => {
   try {
