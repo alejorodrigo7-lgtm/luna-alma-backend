@@ -79,8 +79,10 @@ const createSale = async (req, res) => {
       await movement.save();
     }
     
-    const iva = subtotal * IVA_RATE;
-    const total = subtotal + iva;
+    const total = subtotal;                          // precio público (lo que paga el cliente)
+    const baseGravable = total / (1 + IVA_RATE);     // base sin IVA
+    const iva = total - baseGravable;                // IVA incluido
+    subtotal = baseGravable;                         // reasignar subtotal a base gravable
     
     // Generar número de factura
     const count = await Sale.countDocuments();
