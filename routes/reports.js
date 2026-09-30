@@ -10,7 +10,7 @@ const {
   topProductsReport,
   topClientsReport
 } = require('../controllers/reportController');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 // Todas las rutas requieren autenticación
 router.use(auth);
