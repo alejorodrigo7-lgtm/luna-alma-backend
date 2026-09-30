@@ -15,39 +15,123 @@ const parseRange = (from, to) => {
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 // ============================================================
-// 1. REPORTE DE VENTAS
-// GET /api/reports/sales?from=YYYY-MM-DD&to=YYYY-MM-DD
+// 1. REPORTE DE VENTAS (mejorado con filtro por método)
+// GET /api/reports/sales?from=&to=&paymentMethod=all|Efectivo|Tarjeta|Transferencia
 // ============================================================
 const salesReport = async (req, res) => {
   try {
-    const { from, to } = req.query;
+    const { from, to, paymentMethod = 'all' } = req.query;
     const { start, end } = parseRange(from, to);
 
-    const sales = await Sale.find({
+    // Query base (sin filtro de método) para la comparativa global
+    const baseQuery = {
       status: 'completada',
       createdAt: { $gte: start, $lte: end }
-    })
-      .populate('userId', 'name')
-      .sort({ createdAt: -1 })
-      .lean();
+    };
 
+    // Query filtrada (con método si aplica)
+    const filteredQuery = { ...baseQuery };
+    if (paymentMethod && paymentMethod !== 'all') {
+      filteredQuery.paymentMethod = paymentMethod;
+    }
+
+    const [allSales, sales] = await Promise.all([
+      Sale.find(baseQuery).lean(),
+      Sale.find(filteredQuery)
+        .populate('userId', 'name')
+        .sort({ createdAt: -1 })
+        .lean()
+    ]);
+
+    // ==== KPIs filtrados ====
     const total = round2(sales.reduce((acc, s) => acc + (s.total || 0), 0));
     const totalIva = round2(sales.reduce((acc, s) => acc + (s.iva || 0), 0));
     const totalBase = round2(sales.reduce((acc, s) => acc + (s.subtotal || 0), 0));
     const count = sales.length;
     const ticketPromedio = count > 0 ? round2(total / count) : 0;
 
+    // ==== Comparativa GLOBAL (siempre con todas las ventas) ====
     const byMethod = {
-      Efectivo: round2(sales.filter(s => s.paymentMethod === 'Efectivo').reduce((a, s) => a + s.total, 0)),
-      Tarjeta: round2(sales.filter(s => s.paymentMethod === 'Tarjeta').reduce((a, s) => a + s.total, 0)),
-      Transferencia: round2(sales.filter(s => s.paymentMethod === 'Transferencia').reduce((a, s) => a + s.total, 0))
+      Efectivo: round2(allSales.filter(s => s.paymentMethod === 'Efectivo').reduce((a, s) => a + s.total, 0)),
+      Tarjeta: round2(allSales.filter(s => s.paymentMethod === 'Tarjeta').reduce((a, s) => a + s.total, 0)),
+      Transferencia: round2(allSales.filter(s => s.paymentMethod === 'Transferencia').reduce((a, s) => a + s.total, 0))
     };
+
+    const countByMethod = {
+      Efectivo: allSales.filter(s => s.paymentMethod === 'Efectivo').length,
+      Tarjeta: allSales.filter(s => s.paymentMethod === 'Tarjeta').length,
+      Transferencia: allSales.filter(s => s.paymentMethod === 'Transferencia').length
+    };
+
+    // ==== Top productos (según filtro) ====
+    const productMap = {};
+    sales.forEach(s => {
+      s.products.forEach(item => {
+        const key = String(item.productId);
+        if (!productMap[key]) {
+          productMap[key] = {
+            productId: item.productId,
+            sku: item.sku,
+            name: item.name,
+            cantidad: 0,
+            totalVendido: 0
+          };
+        }
+        productMap[key].cantidad += item.quantity;
+        productMap[key].totalVendido += item.subtotal || 0;
+      });
+    });
+
+    const topProducts = Object.values(productMap)
+      .map(r => ({ ...r, totalVendido: round2(r.totalVendido) }))
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
+
+    // ==== Top clientes (según filtro) ====
+    const clientMap = {};
+    sales.forEach(s => {
+      const key = (s.clientEmail || s.clientName || 'anonimo').toLowerCase().trim();
+      if (!clientMap[key]) {
+        clientMap[key] = {
+          clientName: s.clientName || 'Cliente general',
+          clientEmail: s.clientEmail || '',
+          compras: 0,
+          total: 0,
+          ultimaCompra: s.createdAt
+        };
+      }
+      clientMap[key].compras += 1;
+      clientMap[key].total += s.total || 0;
+      if (new Date(s.createdAt) > new Date(clientMap[key].ultimaCompra)) {
+        clientMap[key].ultimaCompra = s.createdAt;
+      }
+    });
+
+    const topClients = Object.values(clientMap)
+      .map(r => ({
+        ...r,
+        total: round2(r.total),
+        ticketPromedio: round2(r.total / r.compras)
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
 
     res.json({
       success: true,
       range: { from: from || null, to: to || null },
-      summary: { total, totalIva, totalBase, count, ticketPromedio, byMethod },
-      sales
+      paymentMethod,
+      summary: {
+        total,
+        totalIva,
+        totalBase,
+        count,
+        ticketPromedio,
+        byMethod,
+        countByMethod
+      },
+      sales,
+      topProducts,
+      topClients
     });
   } catch (err) {
     console.error('Error salesReport:', err);
