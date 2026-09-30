@@ -1,4 +1,4 @@
-// backend/server.js
+﻿// backend/server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -16,10 +16,11 @@ connectDB();
 // Rutas
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
-// Rutas del sistema de gestión
+// Rutas del sistema de gestiÃ³n
 app.use('/api/sales', require('./routes/sales'));
 app.use('/api/shifts', require('./routes/shifts'));
 app.use('/api/history', require('./routes/history'));
+app.use('/api/reports', require('./routes/reports'));
 // Ruta temporal para crear usuarios (SOLO PARA PRUEBAS)
 app.post('/api/setup/create-users', async (req, res) => {
   try {
@@ -80,13 +81,13 @@ app.post('/api/setup/create-users', async (req, res) => {
   }
 });
 
-// Ruta raíz (para evitar error 404)
+// Ruta raÃ­z (para evitar error 404)
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: '🌙 Luna & Alma API',
+    message: 'ðŸŒ™ Luna & Alma API',
     version: '1.0.0',
-    status: '✅ Servidor funcionando correctamente',
+    status: 'âœ… Servidor funcionando correctamente',
     endpoints: {
       test: '/api/test',
       auth: '/api/auth/login',
@@ -99,13 +100,13 @@ app.get('/', (req, res) => {
 app.get('/api/test', (req, res) => {
   res.json({ 
     success: true,
-    message: '✅ API Luna & Alma funcionando',
+    message: 'âœ… API Luna & Alma funcionando',
     database: 'MongoDB Atlas - luna_alma'
   });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📊 Base de datos: luna_alma`);
+  console.log(`ðŸš€ Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`ðŸ“Š Base de datos: luna_alma`);
 });
